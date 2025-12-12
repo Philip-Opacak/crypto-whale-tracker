@@ -9,10 +9,8 @@ package com.whalewatcher.domain;
 
 public record WhaleEvent(
         String id,
-        String exchange,
+        Exchange exchange,
         String symbol,
-        String base,
-        String quote,
         String side,
         double price,
         double quantity,

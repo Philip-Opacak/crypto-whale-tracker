@@ -7,7 +7,7 @@ package com.whalewatcher.domain;
  */
 
 public record Trade(
-        String exchange,
+        Exchange exchange,
         String symbol,
         double price,
         double volume,

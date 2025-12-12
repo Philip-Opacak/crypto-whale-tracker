@@ -1,5 +1,6 @@
 package com.whalewatcher.service;
 
+import com.whalewatcher.domain.Exchange;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -35,15 +36,15 @@ public class SymbolMapper {
             "XRP-USD", "XRP/USD"
     );
 
-    public String normalize(String rawSymbol, String exchange) {
+    public String normalize(String rawSymbol, Exchange exchange) {
         if (rawSymbol == null || exchange == null) return null;
 
         String symbol = rawSymbol.toUpperCase(Locale.ROOT);
-        return switch (exchange.toLowerCase()) {
-            case "kraken"   -> KRAKEN_MAP.get(symbol);
-            case "binance"  -> BINANCE_MAP.get(symbol);
-            case "coinbase" -> COINBASE_MAP.get(symbol);
-            default         -> null;
+        return switch (exchange) {
+            case KRAKEN   -> KRAKEN_MAP.get(symbol);
+            case BINANCE  -> BINANCE_MAP.get(symbol);
+            case COINBASE -> COINBASE_MAP.get(symbol);
+            default -> null;
         };
     }
 }
