@@ -6,10 +6,14 @@ package com.whalewatcher.domain;
  * Each exchange may encode this information differently
 */
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 public enum Side {
     BUY, SELL;
 
+    @JsonCreator
     public static Side fromExchangeCode(String code) {
+        if (code == null) return null;
         return switch (code.toLowerCase()) {
             case "b", "buy" -> BUY;
             case "s", "sell" -> SELL;
