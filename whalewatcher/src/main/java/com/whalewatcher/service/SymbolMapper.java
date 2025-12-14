@@ -39,7 +39,7 @@ public class SymbolMapper {
     public String normalize(String rawSymbol, Exchange exchange) {
         if (rawSymbol == null || exchange == null) return null;
 
-        String symbol = rawSymbol.toUpperCase(Locale.ROOT);
+        String symbol = rawSymbol.trim().toUpperCase(Locale.ROOT);
         return switch (exchange) {
             case KRAKEN   -> KRAKEN_MAP.get(symbol);
             case BINANCE  -> BINANCE_MAP.get(symbol);
