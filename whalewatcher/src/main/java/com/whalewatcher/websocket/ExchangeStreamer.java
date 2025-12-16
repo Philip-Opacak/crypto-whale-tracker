@@ -1,0 +1,9 @@
+package com.whalewatcher.websocket;
+
+import com.whalewatcher.domain.Exchange;
+
+public interface ExchangeStreamer {
+    Exchange exchange();
+    void start();
+    void stop();
+}

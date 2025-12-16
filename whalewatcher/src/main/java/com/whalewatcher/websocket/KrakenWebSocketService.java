@@ -1,15 +1,13 @@
-package com.whalewatcher.service;
+package com.whalewatcher.websocket;
 
 import com.whalewatcher.domain.Exchange;
 import com.whalewatcher.domain.Trade;
 
 import com.google.gson.Gson;
+import com.whalewatcher.service.IngestionService;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.springframework.stereotype.Service;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 
 import java.net.URI;
 import java.time.Instant;
@@ -18,7 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Service
-public class KrakenWebSocketService extends WebSocketClient {
+public class KrakenWebSocketService extends WebSocketClient implements ExchangeStreamer{
 
     private static final Gson GSON = new Gson();
 
@@ -38,12 +36,17 @@ public class KrakenWebSocketService extends WebSocketClient {
         this.ingestionService = ingestionService;
     }
 
-    @PostConstruct
+    @Override
+    public Exchange exchange() {
+        return Exchange.KRAKEN;
+    }
+
+    @Override
     public void start() {
         this.connect();
     }
 
-    @PreDestroy
+    @Override
     public void stop() {
         try { this.close(); } catch (Exception ignored) {}
         processingPool.shutdownNow();

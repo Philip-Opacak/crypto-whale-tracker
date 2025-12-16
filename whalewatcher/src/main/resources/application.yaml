@@ -26,8 +26,8 @@ logging:
     org.springframework.web: INFO
     com.whalewatcher: DEBUG
 
-# placeholders for later sections
-exchanges: {}
-detection:
-  rules: {}
-rollups: {}
+streams:
+  enabled:
+    - KRAKEN
+    - BINANCE
+    - COINBASE
