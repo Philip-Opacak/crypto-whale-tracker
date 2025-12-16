@@ -14,6 +14,7 @@ public class SymbolMapper {
 
     private static final Map<String, String> KRAKEN_MAP = Map.of(
             "XBT/USD", "BTC/USD",
+            "BTC/USD", "BTC/USD",
             "ETH/USD", "ETH/USD",
             "BNB/USD", "BNB/USD",
             "SOL/USD", "SOL/USD",
