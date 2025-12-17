@@ -81,7 +81,7 @@ public class KrakenWebSocketService extends WebSocketClient implements ExchangeS
                 //Single message may contain multiple trades
                 for (KrakenTrade t : parsed.data()) {
                     Trade trade = new Trade(
-                            Exchange.KRAKEN,
+                            exchange(),
                             t.symbol(),
                             t.price(),
                             t.qty(),
