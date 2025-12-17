@@ -31,3 +31,11 @@ streams:
     - KRAKEN
     - BINANCE
     - COINBASE
+
+whalewatcher:
+  onchain:
+    quicknodeHttpUrl: ${QUICKNODE_HTTP_URL}
+    pollMs: 60000
+    maxBlocksPerPoll: 50
+    native:
+      whaleThresholdEth: 500
