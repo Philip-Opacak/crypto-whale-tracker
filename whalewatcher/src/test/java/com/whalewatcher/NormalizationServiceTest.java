@@ -2,7 +2,7 @@ package com.whalewatcher;
 
 import com.whalewatcher.domain.Exchange;
 import com.whalewatcher.domain.Trade;
-import com.whalewatcher.domain.WhaleEvent;
+import com.whalewatcher.domain.OffChainWhaleEvent;
 import com.whalewatcher.service.NormalizationService;
 import com.whalewatcher.service.SymbolMapper;
 import com.whalewatcher.service.WhaleDetectionService;
@@ -50,7 +50,7 @@ public class NormalizationServiceTest {
         when(whaleDetectionService.isWhale(any()))
                 .thenReturn(true);
 
-        Optional<WhaleEvent> result = service.normalizeAndFilter(trade);
+        Optional<OffChainWhaleEvent> result = service.normalizeAndFilter(trade);
 
         assertTrue(result.isPresent());
     }

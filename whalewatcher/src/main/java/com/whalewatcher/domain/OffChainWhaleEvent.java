@@ -7,7 +7,7 @@ package com.whalewatcher.domain;
  * where all totals are expressed in USD.
 */
 
-public record WhaleEvent(
+public record OffChainWhaleEvent(
         String id,
         Exchange exchange,
         String symbol,

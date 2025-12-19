@@ -1,6 +1,6 @@
 package com.whalewatcher.repository;
 
-import com.whalewatcher.domain.WhaleEvent;
+import com.whalewatcher.domain.OffChainWhaleEvent;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayDeque;
@@ -10,10 +10,10 @@ import java.util.List;
 @Repository
 public class InMemoryWhaleRepository implements  WhaleEventRepository {
 
-    private final Deque<WhaleEvent> events = new ArrayDeque<>();
+    private final Deque<OffChainWhaleEvent> events = new ArrayDeque<>();
 
     @Override
-    public void save(WhaleEvent whaleEvent) {
+    public void save(OffChainWhaleEvent whaleEvent) {
         events.addFirst(whaleEvent);
         if (events.size() > 1000)
             events.removeLast();
@@ -21,7 +21,7 @@ public class InMemoryWhaleRepository implements  WhaleEventRepository {
     }
 
     @Override
-    public List<WhaleEvent> findRecent(int limit) {
+    public List<OffChainWhaleEvent> findRecent(int limit) {
         return events.stream().limit(limit).toList();
     }
 }

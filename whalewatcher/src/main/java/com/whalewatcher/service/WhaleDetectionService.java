@@ -1,12 +1,12 @@
 package com.whalewatcher.service;
 
-import com.whalewatcher.domain.WhaleEvent;
+import com.whalewatcher.domain.OffChainWhaleEvent;
 import org.springframework.stereotype.Service;
 
 @Service
 public class WhaleDetectionService {
 
-    public boolean isWhale(WhaleEvent event){
+    public boolean isWhale(OffChainWhaleEvent event){
         String symbol = event.symbol();
         double usd = event.totalUsd();
 

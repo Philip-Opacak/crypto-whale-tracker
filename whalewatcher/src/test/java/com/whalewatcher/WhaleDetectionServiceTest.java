@@ -1,7 +1,7 @@
 package com.whalewatcher;
 
 import com.whalewatcher.domain.Exchange;
-import com.whalewatcher.domain.WhaleEvent;
+import com.whalewatcher.domain.OffChainWhaleEvent;
 import com.whalewatcher.service.WhaleDetectionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,7 @@ public class WhaleDetectionServiceTest {
 
     @Test
     void btcWhaleAboveThreshold() {
-        WhaleEvent event = new WhaleEvent(
+        OffChainWhaleEvent event = new OffChainWhaleEvent(
                 "id",
                 Exchange.KRAKEN,
                 "BTC/USD",
@@ -35,7 +35,7 @@ public class WhaleDetectionServiceTest {
 
     @Test
     void btcBelowThreshold() {
-        WhaleEvent event = new WhaleEvent(
+        OffChainWhaleEvent event = new OffChainWhaleEvent(
                 "id",
                 Exchange.KRAKEN,
                 "BTC/USD",

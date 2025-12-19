@@ -1,13 +1,13 @@
 package com.whalewatcher.repository;
 
-import com.whalewatcher.domain.WhaleEvent;
+import com.whalewatcher.domain.OffChainWhaleEvent;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
 public interface WhaleEventRepository {
-    void save(WhaleEvent whaleEvent);
+    void save(OffChainWhaleEvent whaleEvent);
 
-    List<WhaleEvent> findRecent(int limit);
+    List<OffChainWhaleEvent> findRecent(int limit);
 }

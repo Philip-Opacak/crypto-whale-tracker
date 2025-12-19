@@ -2,7 +2,7 @@ package com.whalewatcher.service;
 
 import com.whalewatcher.domain.Side;
 import com.whalewatcher.domain.Trade;
-import com.whalewatcher.domain.WhaleEvent;
+import com.whalewatcher.domain.OffChainWhaleEvent;
 import org.springframework.stereotype.Service;
 
 import java.util.Locale;
@@ -20,7 +20,7 @@ public class NormalizationService {
         this.whaleDetectionService = whaleDetectionService;
     }
 
-    public WhaleEvent normalize(Trade trade) {
+    public OffChainWhaleEvent normalize(Trade trade) {
         // 1) Symbol normalization
         String normalizedSymbol = symbolMapper.normalize(trade.symbol(), trade.exchange());
 
@@ -36,7 +36,7 @@ public class NormalizationService {
         String id = UUID.randomUUID().toString();
 
         // 5) Build canonical event
-        return new WhaleEvent(
+        return new OffChainWhaleEvent(
                 id,
                 trade.exchange(),
                 normalizedSymbol,
@@ -48,8 +48,8 @@ public class NormalizationService {
         );
     }
 
-    public Optional<WhaleEvent> normalizeAndFilter(Trade trade) {
-        WhaleEvent event = normalize(trade);
+    public Optional<OffChainWhaleEvent> normalizeAndFilter(Trade trade) {
+        OffChainWhaleEvent event = normalize(trade);
         if (event == null) return Optional.empty();
 
         return whaleDetectionService.isWhale(event)
