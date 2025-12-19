@@ -7,7 +7,7 @@ import com.google.gson.Gson;
 import com.whalewatcher.service.IngestionService;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.time.Instant;
@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Service
-public class KrakenWebSocketService extends WebSocketClient implements ExchangeStreamer{
+@Component
+public class KrakenStreamAdapter extends WebSocketClient implements ExchangeStreamer{
 
     private static final Gson GSON = new Gson();
 
@@ -31,7 +31,7 @@ public class KrakenWebSocketService extends WebSocketClient implements ExchangeS
     private final ExecutorService processingPool =
             Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
-    public KrakenWebSocketService(IngestionService ingestionService) {
+    public KrakenStreamAdapter(IngestionService ingestionService) {
         super(URI.create("wss://ws.kraken.com/v2"));
         this.ingestionService = ingestionService;
     }

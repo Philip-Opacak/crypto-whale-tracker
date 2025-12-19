@@ -6,14 +6,14 @@ import com.whalewatcher.domain.Trade;
 import com.whalewatcher.service.IngestionService;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Service
-public class BinanceWebSocketService extends WebSocketClient implements ExchangeStreamer {
+@Component
+public class BinanceStreamAdapter extends WebSocketClient implements ExchangeStreamer {
 
     private static final Gson GSON = new Gson();
 
@@ -36,7 +36,7 @@ public class BinanceWebSocketService extends WebSocketClient implements Exchange
     private final ExecutorService processingPool =
             Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
-    public BinanceWebSocketService(IngestionService ingestionService) {
+    public BinanceStreamAdapter(IngestionService ingestionService) {
         super(URI.create(
                 "wss://stream.binance.com:9443/stream?streams=" +
                         "btcusdt@trade/" +

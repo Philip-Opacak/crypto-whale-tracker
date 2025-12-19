@@ -6,7 +6,7 @@ import com.whalewatcher.domain.Trade;
 import com.whalewatcher.service.IngestionService;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.time.Instant;
@@ -15,8 +15,8 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Service
-public class CoinbaseWebSocketService extends WebSocketClient implements ExchangeStreamer {
+@Component
+public class CoinbaseStreamAdapter extends WebSocketClient implements ExchangeStreamer {
     private static final Gson GSON = new Gson();
 
     //DTO representing a single trade from Coinbase
@@ -46,7 +46,7 @@ public class CoinbaseWebSocketService extends WebSocketClient implements Exchang
     private final ExecutorService processingPool =
             Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
-    public CoinbaseWebSocketService(IngestionService ingestionService) {
+    public CoinbaseStreamAdapter(IngestionService ingestionService) {
         super(URI.create("wss://advanced-trade-ws.coinbase.com"));
         this.ingestionService = ingestionService;
     }
