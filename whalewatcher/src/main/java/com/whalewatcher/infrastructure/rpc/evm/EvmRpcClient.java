@@ -1,4 +1,4 @@
-package com.whalewatcher.rpc;
+package com.whalewatcher.infrastructure.rpc.evm;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -10,12 +10,12 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Component
-public class QuickNodeClient {
+public class EvmRpcClient {
 
     private final WebClient webClient;
     private final AtomicLong rpcId = new AtomicLong(1);
 
-    public QuickNodeClient(
+    public EvmRpcClient(
             WebClient.Builder builder,
             @Value("${whalewatcher.onchain.quicknodeHttpUrl}") String url
     ) {

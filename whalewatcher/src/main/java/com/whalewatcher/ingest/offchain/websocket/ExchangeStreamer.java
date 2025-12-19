@@ -1,4 +1,4 @@
-package com.whalewatcher.websocket;
+package com.whalewatcher.ingest.offchain.websocket;
 
 import com.whalewatcher.domain.Exchange;
 
