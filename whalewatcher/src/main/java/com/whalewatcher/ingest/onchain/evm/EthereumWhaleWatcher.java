@@ -1,5 +1,7 @@
 package com.whalewatcher.ingest.onchain.evm;
 
+import com.whalewatcher.domain.Chain;
+import com.whalewatcher.domain.OnChainWhaleEvent;
 import com.whalewatcher.infrastructure.rpc.evm.EvmRpcClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,12 +11,14 @@ import org.springframework.stereotype.Component;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class EthereumWhaleWatcher {
 
     private final EvmRpcClient evmRpcClient;
+    private final OnChainEventBuffer buffer;
 
     @Value("${whalewatcher.onchain.native.whaleThresholdEth:500}")
     private double whaleThresholdEth;
@@ -57,12 +61,21 @@ public class EthereumWhaleWatcher {
                 double eth = wei.doubleValue() / 1e18;
 
                 if (eth >= whaleThresholdEth) {
-                    String from = (String) tx.get("from");
+                    String fromAddr = (String) tx.get("from");
                     String toAddr = (String) tx.get("to");
                     String hash = (String) tx.get("hash");
 
-                    System.out.printf("WHALE ETH %.4f | block=%d | %s -> %s | tx=%s%n",
-                            eth, b, from, toAddr, hash);
+                    buffer.add(new OnChainWhaleEvent(
+                            UUID.randomUUID().toString(),
+                            Chain.ETHEREUM,
+                            "ETH",
+                            eth,
+                            fromAddr,
+                            toAddr,
+                            hash,
+                            b,
+                            System.currentTimeMillis()
+                    ));
                 }
             }
         }
