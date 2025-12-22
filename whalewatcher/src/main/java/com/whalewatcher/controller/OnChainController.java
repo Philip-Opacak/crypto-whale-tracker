@@ -18,6 +18,7 @@ public class OnChainController {
 
     @GetMapping("/whales")
     public List<OnChainWhaleEvent> whales(@RequestParam(defaultValue = "50") int limit) {
-        return buffer.latest(limit);
+        int safeLimit = Math.max(1, Math.min(limit, 500));
+        return buffer.latest(safeLimit);
     }
 }
