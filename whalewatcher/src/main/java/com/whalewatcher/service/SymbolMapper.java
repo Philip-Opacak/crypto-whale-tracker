@@ -45,6 +45,14 @@ public class SymbolMapper {
             "XRPUSDT", "XRP/USD"
     );
 
+    // Upbit does not support BNB
+    private final static Map<String, String> UPBIT_MAP = Map.of(
+            "USDT-BTC", "BTC/USD",
+            "USDT-ETH", "ETH/USD",
+            "USDT-SOL", "SOL/USD",
+            "USDT-XRP", "XRP/USD"
+    );
+
     public String normalize(String rawSymbol, Exchange exchange) {
         if (rawSymbol == null || exchange == null) return null;
 
@@ -54,6 +62,7 @@ public class SymbolMapper {
             case BINANCE  -> BINANCE_MAP.get(symbol);
             case COINBASE -> COINBASE_MAP.get(symbol);
             case BYBIT -> BYBIT_MAP.get(symbol);
+            case UPBIT -> UPBIT_MAP.get(symbol);
             default -> null;
         };
     }

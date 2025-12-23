@@ -31,6 +31,8 @@ streams:
     - KRAKEN
     - BINANCE
     - COINBASE
+    - BYBIT
+    - UPBIT
 
 whalewatcher:
   onchain:
