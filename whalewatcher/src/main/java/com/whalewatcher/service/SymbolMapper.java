@@ -37,6 +37,14 @@ public class SymbolMapper {
             "XRP-USD", "XRP/USD"
     );
 
+    private final static Map<String, String> BYBIT_MAP = Map.of(
+            "BTCUSDT", "BTC/USD",
+            "ETHUSDT", "ETH/USD",
+            "BNBUSDT", "BNB/USD",
+            "SOLUSDT", "SOL/USD",
+            "XRPUSDT", "XRP/USD"
+    );
+
     public String normalize(String rawSymbol, Exchange exchange) {
         if (rawSymbol == null || exchange == null) return null;
 
@@ -45,6 +53,7 @@ public class SymbolMapper {
             case KRAKEN   -> KRAKEN_MAP.get(symbol);
             case BINANCE  -> BINANCE_MAP.get(symbol);
             case COINBASE -> COINBASE_MAP.get(symbol);
+            case BYBIT -> BYBIT_MAP.get(symbol);
             default -> null;
         };
     }
