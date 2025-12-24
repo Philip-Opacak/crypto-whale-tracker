@@ -24,7 +24,7 @@ public class UpbitStreamAdapter extends WebSocketClient implements ExchangeStrea
             String code,    // ticker
             Double trade_price, //price
             Double trade_volume,    //volume
-            String ask_bid, //asl/bid
+            String ask_bid, //ask/bid
             Long trade_timestamp    //timestamp (ms)
     ) {}
 
@@ -65,7 +65,7 @@ public class UpbitStreamAdapter extends WebSocketClient implements ExchangeStrea
         """;
         send(subscribe);
     }
-    // Decode binary frame from bybit then send UTF-8 JSON message to onMessage() that takes string input parameter
+    // Decode binary frame from upbit then send UTF-8 JSON message to onMessage() that takes string input parameter
     @Override
     public void onMessage(ByteBuffer bytes) {
         if (bytes == null) return;

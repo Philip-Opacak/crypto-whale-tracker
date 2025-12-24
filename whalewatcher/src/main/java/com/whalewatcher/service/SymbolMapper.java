@@ -29,10 +29,10 @@ public class SymbolMapper {
             "XRPUSDT", "XRP/USD"
     );
 
+    // Coinbase does not support BNB (coming soon)
     private static final Map<String, String> COINBASE_MAP = Map.of(
             "BTC-USD", "BTC/USD",
             "ETH-USD", "ETH/USD",
-            "BNB-USD", "BNB/USD",
             "SOL-USD", "SOL/USD",
             "XRP-USD", "XRP/USD"
     );
@@ -53,6 +53,14 @@ public class SymbolMapper {
             "USDT-XRP", "XRP/USD"
     );
 
+    private final static Map<String, String> OKX_MAP = Map.of(
+            "BTC-USDT", "BTC/USD",
+            "ETH-USDT", "ETH/USD",
+            "SOL-USDT", "SOL/USD",
+            "XRP-USDT", "XRP/USD",
+            "BNB-USDT", "BNB/USD"
+    );
+
     public String normalize(String rawSymbol, Exchange exchange) {
         if (rawSymbol == null || exchange == null) return null;
 
@@ -63,6 +71,7 @@ public class SymbolMapper {
             case COINBASE -> COINBASE_MAP.get(symbol);
             case BYBIT -> BYBIT_MAP.get(symbol);
             case UPBIT -> UPBIT_MAP.get(symbol);
+            case OKX -> OKX_MAP.get(symbol);
             default -> null;
         };
     }

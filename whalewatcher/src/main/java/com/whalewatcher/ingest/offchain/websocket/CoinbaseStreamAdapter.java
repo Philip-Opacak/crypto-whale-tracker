@@ -73,7 +73,7 @@ public class CoinbaseStreamAdapter extends WebSocketClient implements ExchangeSt
         String subscribeMessage = """
         {
             "type": "subscribe",
-            "product_ids": ["BTC-USD","ETH-USD","BNB-USD","SOL-USD","XRP-USD"],
+            "product_ids": ["BTC-USD","ETH-USD","SOL-USD","XRP-USD"],
             "channel": "market_trades"
         }
         """;

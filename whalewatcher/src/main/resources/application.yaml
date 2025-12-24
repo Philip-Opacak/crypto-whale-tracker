@@ -33,6 +33,7 @@ streams:
     - COINBASE
     - BYBIT
     - UPBIT
+    - OKX
 
 whalewatcher:
   onchain:
