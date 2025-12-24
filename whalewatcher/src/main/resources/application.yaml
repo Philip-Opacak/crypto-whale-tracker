@@ -35,6 +35,7 @@ streams:
     - UPBIT
     - OKX
     - BITGET
+    - GATE
 
 whalewatcher:
   onchain:

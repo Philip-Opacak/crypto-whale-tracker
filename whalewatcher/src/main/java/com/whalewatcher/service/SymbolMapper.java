@@ -69,6 +69,14 @@ public class SymbolMapper {
             "XRPUSDT", "XRP/USD"
     );
 
+    private final static Map<String, String> GATE_MAP = Map.of(
+            "BTC_USDT", "BTC/USD",
+            "ETH_USDT", "ETH/USD",
+            "BNB_USDT", "BNB/USD",
+            "SOL_USDT", "SOL/USD",
+            "XRP_USDT", "XRP/USD"
+    );
+
     public String normalize(String rawSymbol, Exchange exchange) {
         if (rawSymbol == null || exchange == null) return null;
 
@@ -81,6 +89,7 @@ public class SymbolMapper {
             case UPBIT -> UPBIT_MAP.get(symbol);
             case OKX -> OKX_MAP.get(symbol);
             case BITGET -> BITGET_MAP.get(symbol);
+            case GATE -> GATE_MAP.get(symbol);
             default -> null;
         };
     }
