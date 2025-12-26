@@ -36,6 +36,7 @@ streams:
     - OKX
     - BITGET
     - GATE
+    - KUCOIN
 
 whalewatcher:
   onchain:

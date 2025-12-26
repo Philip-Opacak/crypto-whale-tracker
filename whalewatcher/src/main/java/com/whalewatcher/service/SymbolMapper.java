@@ -77,6 +77,14 @@ public class SymbolMapper {
             "XRP_USDT", "XRP/USD"
     );
 
+    private final static Map<String, String> KUCOIN_MAP = Map.of(
+            "BTC-USDT", "BTC/USD",
+            "ETH-USDT", "ETH/USD",
+            "SOL-USDT", "SOL/USD",
+            "XRP-USDT", "XRP/USD",
+            "BNB-USDT", "BNB/USD"
+    );
+
     public String normalize(String rawSymbol, Exchange exchange) {
         if (rawSymbol == null || exchange == null) return null;
 
@@ -90,6 +98,7 @@ public class SymbolMapper {
             case OKX -> OKX_MAP.get(symbol);
             case BITGET -> BITGET_MAP.get(symbol);
             case GATE -> GATE_MAP.get(symbol);
+            case KUCOIN -> KUCOIN_MAP.get(symbol);
             default -> null;
         };
     }
