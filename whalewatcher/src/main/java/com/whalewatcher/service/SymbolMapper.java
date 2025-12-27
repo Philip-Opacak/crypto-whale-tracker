@@ -93,6 +93,14 @@ public class SymbolMapper {
             "BNBUSD-PERP", "BNB/USD"
     );
 
+    private final static Map<String, String> MEXC_MAP = Map.of(
+            "BTC_USDT", "BTC/USD",
+            "ETH_USDT", "ETH/USD",
+            "BNB_USDT", "BNB/USD",
+            "SOL_USDT", "SOL/USD",
+            "XRP_USDT", "XRP/USD"
+    );
+
     public String normalize(String rawSymbol, Exchange exchange) {
         if (rawSymbol == null || exchange == null) return null;
 
@@ -108,6 +116,7 @@ public class SymbolMapper {
             case GATE -> GATE_MAP.get(symbol);
             case KUCOIN -> KUCOIN_MAP.get(symbol);
             case CRYPTOCOM -> CRYPTOCOM_MAP.get(symbol);
+            case MEXC -> MEXC_MAP.get(symbol);
             default -> null;
         };
     }

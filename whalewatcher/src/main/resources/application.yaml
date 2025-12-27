@@ -38,6 +38,7 @@ streams:
     - GATE
     - KUCOIN
     - CRYPTOCOM
+    - MEXC
 
 whalewatcher:
   onchain:
