@@ -37,6 +37,7 @@ streams:
     - BITGET
     - GATE
     - KUCOIN
+    - CRYPTOCOM
 
 whalewatcher:
   onchain:
