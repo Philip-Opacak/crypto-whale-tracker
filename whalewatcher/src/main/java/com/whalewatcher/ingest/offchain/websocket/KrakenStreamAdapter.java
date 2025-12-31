@@ -1,39 +1,21 @@
 package com.whalewatcher.ingest.offchain.websocket;
 
 import com.whalewatcher.domain.Exchange;
-import com.whalewatcher.domain.Trade;
 
-import com.google.gson.Gson;
-import com.whalewatcher.service.IngestionService;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
-import java.time.Instant;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Component
-public class KrakenStreamAdapter extends WebSocketClient implements ExchangeStreamer{
+public class KrakenStreamAdapter extends WebSocketClient implements ExchangeStreamer {
 
-    private static final Gson GSON = new Gson();
+    private final RawWsBus bus;
 
-    //DTO representing a single trade from Kraken
-    record KrakenTrade(String symbol, String side, double price, double qty, String timestamp) {}
-
-    //Wrapper object for Kraken message
-    record KrakenMsg(String channel, String type, List<KrakenTrade> data) {}
-
-    private final IngestionService ingestionService;
-
-    private final ExecutorService processingPool =
-            Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
-    public KrakenStreamAdapter(IngestionService ingestionService) {
+    public KrakenStreamAdapter(RawWsBus bus) {
         super(URI.create("wss://ws.kraken.com/v2"));
-        this.ingestionService = ingestionService;
+        this.bus = bus;
     }
 
     @Override
@@ -49,10 +31,9 @@ public class KrakenStreamAdapter extends WebSocketClient implements ExchangeStre
     @Override
     public void stop() {
         try { this.close(); } catch (Exception ignored) {}
-        processingPool.shutdownNow();
     }
 
-    //Sends subscription message requesting trade updates
+    // Sends subscription message requesting trade updates
     @Override
     public void onOpen(ServerHandshake handshake) {
         String subscribeMessage = """
@@ -65,41 +46,22 @@ public class KrakenStreamAdapter extends WebSocketClient implements ExchangeStre
         }
         """;
         send(subscribeMessage);
+        System.out.println("Kraken connection opened + subscribed");
     }
 
     @Override
-    public void onMessage(String msg) {
-        processingPool.submit(() -> {
-            try {
-                KrakenMsg parsed = GSON.fromJson(msg, KrakenMsg.class);
-
-                // Ignore non-trade messages
-                if (parsed == null) return;
-                if (!"trade".equals(parsed.channel())) return;
-                if (parsed.data() == null) return;
-
-                //Single message may contain multiple trades
-                for (KrakenTrade t : parsed.data()) {
-                    Trade trade = new Trade(
-                            exchange(),
-                            t.symbol(),
-                            t.price(),
-                            t.qty(),
-                            t.side(),
-                            Instant.parse(t.timestamp()).toEpochMilli()
-                    );
-                    ingestionService.ingest(trade);
-                }
-
-            } catch (Exception e) {
-                System.err.println("Kraken parse error: " + e.getMessage());
-            }
-        });
+    public void onMessage(String raw) {
+        if (raw == null || raw.isBlank()) return;
+        bus.publish(Exchange.KRAKEN, raw);
     }
 
-    @Override public void onClose(int code, String reason, boolean remote) {
-        System.out.println("Kraken connection closed");
+    @Override
+    public void onClose(int code, String reason, boolean remote) {
+        System.out.println("Kraken connection closed: " + code + " " + reason);
     }
 
-    @Override public void onError(Exception ex) { ex.printStackTrace(); }
+    @Override
+    public void onError(Exception ex) {
+        ex.printStackTrace();
+    }
 }

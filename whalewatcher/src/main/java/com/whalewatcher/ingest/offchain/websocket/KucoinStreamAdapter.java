@@ -2,19 +2,15 @@ package com.whalewatcher.ingest.offchain.websocket;
 
 import com.google.gson.Gson;
 import com.whalewatcher.domain.Exchange;
-import com.whalewatcher.domain.Trade;
-import com.whalewatcher.service.IngestionService;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -30,46 +26,15 @@ public class KucoinStreamAdapter implements ExchangeStreamer {
 
     // REST DTOs
     record BulletResp(String code, BulletData data) {}
-
     record BulletData(String token, List<InstanceServer> instanceServers) {}
-
     record InstanceServer(String endpoint, long pingInterval, long pingTimeout) {}
 
-    // DTOs (Trade channel)
-    record KucoinSubscribeMsg(String id, String type, String topic, boolean response) {}
-    record KucoinPingMsg(String id, String type) {}
-
-    record KucoinMsg(
-            String id,
-            String topic,
-            String type,     // type
-            String subject,  // subject
-            KucoinTradeData data
-    ) {}
-
-    record KucoinTradeData(
-            String makerOrderId,
-            String price,
-            String sequence,
-            String side,        // buy/sell
-            String size,
-            String symbol,      // ticker
-            String takerOrderId,
-            String time,        // timestamp
-            String tradeId,
-            String type
-    ) {}
-
-    // Adapter fields
-    private final IngestionService ingestionService;
-
-    private final ExecutorService processingPool =
-            Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private final RawWsBus bus;
 
     private volatile KucoinClient client;
 
-    public KucoinStreamAdapter(IngestionService ingestionService) {
-        this.ingestionService = ingestionService;
+    public KucoinStreamAdapter(RawWsBus bus) {
+        this.bus = bus;
     }
 
     @Override
@@ -85,16 +50,13 @@ public class KucoinStreamAdapter implements ExchangeStreamer {
                     + "?token=" + URLEncoder.encode(bullet.token(), StandardCharsets.UTF_8)
                     + "&connectId=" + UUID.randomUUID().toString().replace("-", "");
 
-            // create a fresh WS client with the dynamic URL
             client = new KucoinClient(
                     URI.create(wsUrl),
-                    ingestionService,
-                    processingPool,
+                    bus,
                     server.pingInterval()
             );
 
             client.connect();
-
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -103,7 +65,6 @@ public class KucoinStreamAdapter implements ExchangeStreamer {
     @Override
     public void stop() {
         try { if (client != null) client.close(); } catch (Exception ignored) {}
-        processingPool.shutdownNow();
     }
 
     private BulletData fetchBulletPublic() throws Exception {
@@ -133,22 +94,22 @@ public class KucoinStreamAdapter implements ExchangeStreamer {
 
         private static final Gson GSON = new Gson();
 
-        private final IngestionService ingestionService;
-        private final ExecutorService processingPool;
-        private final ScheduledExecutorService heartbeat = Executors.newSingleThreadScheduledExecutor();
+        // DTOs
+        record KucoinSubscribeMsg(String id, String type, String topic, boolean response) {}
+        record KucoinPingMsg(String id, String type) {}
+
+        record KucoinMsg(String type, String subject) {}
+
+        private final RawWsBus bus;
+        private final ScheduledExecutorService heartbeat =
+                Executors.newSingleThreadScheduledExecutor();
 
         private final long pingIntervalMs;
         private volatile boolean subscribed = false;
 
-        KucoinClient(
-                URI serverUri,
-                IngestionService ingestionService,
-                ExecutorService processingPool,
-                long pingIntervalMs
-        ) {
+        KucoinClient(URI serverUri, RawWsBus bus, long pingIntervalMs) {
             super(serverUri);
-            this.ingestionService = ingestionService;
-            this.processingPool = processingPool;
+            this.bus = bus;
             this.pingIntervalMs = pingIntervalMs > 0 ? pingIntervalMs : 18_000;
         }
 
@@ -160,45 +121,26 @@ public class KucoinStreamAdapter implements ExchangeStreamer {
 
         @Override
         public void onMessage(String raw) {
-            processingPool.submit(() -> {
-                try {
-                    KucoinMsg msg = GSON.fromJson(raw, KucoinMsg.class);
-                    if (msg == null || msg.type() == null) return;
+            if (raw == null || raw.isBlank()) return;
 
-                    // Subscribe after welcome
+            // detect welcome then subscribe
+            try {
+                KucoinMsg msg = GSON.fromJson(raw, KucoinMsg.class);
+                if (msg != null && msg.type() != null) {
                     if (!subscribed && "welcome".equalsIgnoreCase(msg.type())) {
                         subscribed = true;
                         sendSubscribeForFiveSymbols();
                         return;
                     }
-
-                    // Ignore non-trade messages
+                    // Only forward trade messages to workers
                     if (!"message".equalsIgnoreCase(msg.type())) return;
                     if (!"trade.l3match".equalsIgnoreCase(msg.subject())) return;
-                    if (msg.data() == null) return;
 
-                    KucoinTradeData t = msg.data();
-
-                    long timeMs = parseKucoinTimeToMillis(t.time());
-
-                    Trade trade = new Trade(
-                            Exchange.KUCOIN,
-                            t.symbol(),
-                            Double.parseDouble(t.price()),
-                            Double.parseDouble(t.size()),
-                            t.side() == null ? null : t.side().toLowerCase(Locale.ROOT),
-                            timeMs
-                    );
-
-                    ingestionService.ingest(trade);
-
-                } catch (Exception e) {
-                    System.err.println("KuCoin parse error: " + e.getMessage());
+                    bus.publish(Exchange.KUCOIN, raw);
                 }
-            });
+            } catch (Exception ignored) {}
         }
 
-        // Send tickers of interest
         private void sendSubscribeForFiveSymbols() {
             String topic = "/market/match:" +
                     "BTC-USDT," +
@@ -228,13 +170,6 @@ public class KucoinStreamAdapter implements ExchangeStreamer {
                     this.send(GSON.toJson(ping));
                 } catch (Exception ignored) {}
             }, pingIntervalMs, pingIntervalMs, TimeUnit.MILLISECONDS);
-        }
-
-        // convert to time to ms
-        private static long parseKucoinTimeToMillis(String timeStr) {
-            if (timeStr == null) return System.currentTimeMillis();
-            long v = Long.parseLong(timeStr);
-            return (v > 1_000_000_000_000_000L) ? (v / 1_000_000L) : v;
         }
 
         @Override

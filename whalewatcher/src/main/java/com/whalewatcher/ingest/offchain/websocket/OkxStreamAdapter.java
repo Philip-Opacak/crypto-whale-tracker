@@ -1,48 +1,20 @@
 package com.whalewatcher.ingest.offchain.websocket;
 
-import com.google.gson.Gson;
 import com.whalewatcher.domain.Exchange;
-import com.whalewatcher.domain.Trade;
-import com.whalewatcher.service.IngestionService;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
-import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Component
 public class OkxStreamAdapter extends WebSocketClient implements ExchangeStreamer {
-    private static final Gson GSON = new Gson();
 
-    record OkxTrade(
-            String instId,  // ticker
-            String px,  // price
-            String sz,  // volume
-            String side,    // side
-            String ts   // timestamp
-    ) {}
+    private final RawWsBus bus;
 
-    record OkxMsg(
-            OkxArg arg,
-            List<OkxTrade> data
-    ) {}
-
-    record OkxArg(
-            String channel,
-            String instId
-    ) {}
-
-    private final IngestionService ingestionService;
-    private final ExecutorService processingPool =
-            Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
-    public OkxStreamAdapter(IngestionService ingestionService) {
+    public OkxStreamAdapter(RawWsBus bus) {
         super(URI.create("wss://ws.okx.com:8443/ws/v5/public"));
-        this.ingestionService = ingestionService;
+        this.bus = bus;
     }
 
     @Override
@@ -57,16 +29,11 @@ public class OkxStreamAdapter extends WebSocketClient implements ExchangeStreame
 
     @Override
     public void stop() {
-        try{
-            this.close();
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-        processingPool.shutdownNow();
+        try { this.close(); } catch (Exception ignored) {}
     }
 
     @Override
-    public void onOpen(ServerHandshake serverHandshake) {
+    public void onOpen(ServerHandshake handshake) {
         String subscribe = """
         {
             "op": "subscribe",
@@ -80,54 +47,18 @@ public class OkxStreamAdapter extends WebSocketClient implements ExchangeStreame
         }
         """;
         send(subscribe);
+        System.out.println("OKX connection opened + subscribed");
     }
 
     @Override
-    public void onMessage(String s) {
-        processingPool.submit(() -> {
-            try {
-                OkxMsg msg = GSON.fromJson(s, OkxMsg.class);
-                if (msg == null) return;
-
-                // Ignore subscription acks / event messages they will not contain data
-                if (msg.data() == null || msg.data().isEmpty()) return;
-
-                // Ensure it is the trades channel
-                if (msg.arg() == null || !"trades".equalsIgnoreCase(msg.arg().channel())) return;
-
-                // Iterate through the trades
-                for (OkxTrade t : msg.data()) {
-                    if (t == null) continue;
-                    if (t.instId() == null || t.px() == null || t.sz() == null || t.ts() == null) continue;
-                    if (t.instId().isBlank() || t.px().isBlank() || t.sz().isBlank() || t.ts().isBlank()) continue;
-
-                    // Suffix check
-                    if (!t.instId().endsWith("-USDT")) continue;
-
-                    String side = t.side() == null ? null : t.side().toLowerCase(Locale.ROOT);
-                    if (side != null && !side.equals("buy") && !side.equals("sell")) side = null;
-
-                    Trade trade = new Trade(
-                            exchange(),
-                            t.instId(),
-                            Double.parseDouble(t.px()),
-                            Double.parseDouble(t.sz()),
-                            side,
-                            Long.parseLong(t.ts())
-                    );
-
-                    ingestionService.ingest(trade);
-                }
-
-            } catch (Exception e) {
-                System.err.println("OKX parse error: " + e.getMessage());
-            }
-        });
+    public void onMessage(String raw) {
+        if (raw == null || raw.isBlank()) return;
+        bus.publish(Exchange.OKX, raw);
     }
 
     @Override
-    public void onClose(int i, String s, boolean b) {
-        System.out.println("OKX connection closed");
+    public void onClose(int code, String reason, boolean remote) {
+        System.out.println("OKX connection closed: " + code + " " + reason);
     }
 
     @Override

@@ -1,40 +1,22 @@
 package com.whalewatcher.ingest.offchain.websocket;
 
-import com.google.gson.Gson;
 import com.whalewatcher.domain.Exchange;
-import com.whalewatcher.domain.Trade;
-import com.whalewatcher.service.IngestionService;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.nio.charset.StandardCharsets;
 
 @Component
-public class UpbitStreamAdapter extends WebSocketClient implements ExchangeStreamer{
+public class UpbitStreamAdapter extends WebSocketClient implements ExchangeStreamer {
 
-    private static final Gson GSON = new Gson();
+    private final RawWsBus bus;
 
-    record UpbitTrade(
-            String type,    // trade type
-            String code,    // ticker
-            Double trade_price, //price
-            Double trade_volume,    //volume
-            String ask_bid, //ask/bid
-            Long trade_timestamp    //timestamp (ms)
-    ) {}
-
-    private final IngestionService ingestionService;
-    private final ExecutorService processingPool =
-            Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
-    public UpbitStreamAdapter(IngestionService ingestionService) {
+    public UpbitStreamAdapter(RawWsBus bus) {
         super(URI.create("wss://api.upbit.com/websocket/v1"));
-        this.ingestionService = ingestionService;
+        this.bus = bus;
     }
 
     @Override
@@ -49,14 +31,11 @@ public class UpbitStreamAdapter extends WebSocketClient implements ExchangeStrea
 
     @Override
     public void stop() {
-        try{
-            this.close();
-        }catch (Exception e){}
-        processingPool.shutdownNow();
+        try { this.close(); } catch (Exception ignored) {}
     }
 
     @Override
-    public void onOpen(ServerHandshake serverHandshake) {
+    public void onOpen(ServerHandshake handshake) {
         String subscribe = """
         [
           {"ticket":"whalewatcher-upbit"},
@@ -64,56 +43,30 @@ public class UpbitStreamAdapter extends WebSocketClient implements ExchangeStrea
         ]
         """;
         send(subscribe);
+        System.out.println("Upbit connection opened + subscribed");
     }
-    // Decode binary frame from upbit then send UTF-8 JSON message to onMessage() that takes string input parameter
+
+    // Upbit sends binary frames, decode to UTF-8 JSON and hand off to workers
     @Override
     public void onMessage(ByteBuffer bytes) {
         if (bytes == null) return;
+
         byte[] arr = new byte[bytes.remaining()];
         bytes.get(arr);
-        onMessage(new String(arr, java.nio.charset.StandardCharsets.UTF_8));
+
+        String json = new String(arr, StandardCharsets.UTF_8);
+        onMessage(json);
     }
 
     @Override
-    public void onMessage(String s) {
-        processingPool.submit(() -> {
-            try {
-                UpbitTrade t = GSON.fromJson(s, UpbitTrade.class);
-                if (t == null) return;
-                if (!"trade".equalsIgnoreCase(t.type())) return;
-                if (t.code() == null || t.trade_price() == null ||
-                        t.trade_volume() == null || t.trade_timestamp() == null) return;
-
-                Trade trade = new Trade(
-                        exchange(),
-                        t.code(),
-                        t.trade_price(),
-                        t.trade_volume(),
-                        normalizeSide(t.ask_bid()),
-                        t.trade_timestamp()
-                );
-
-                ingestionService.ingest(trade);
-
-            } catch (Exception e) {
-                System.err.println("Upbit parse error: " + e.getMessage());
-            }
-        });
-    }
-
-    // Bid get converted to buy and ask to sell to support side enum structure
-    private String normalizeSide(String ab) {
-        if (ab == null) return null;
-        return switch (ab.toUpperCase(Locale.ROOT)) {
-            case "BID" -> "buy";
-            case "ASK" -> "sell";
-            default -> null;
-        };
+    public void onMessage(String raw) {
+        if (raw == null || raw.isBlank()) return;
+        bus.publish(Exchange.UPBIT, raw);
     }
 
     @Override
-    public void onClose(int i, String s, boolean b) {
-        System.out.println("Upbit connection closed");
+    public void onClose(int code, String reason, boolean remote) {
+        System.out.println("Upbit connection closed: " + code + " " + reason);
     }
 
     @Override

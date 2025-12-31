@@ -11,6 +11,5 @@ public enum Exchange {
     GATE,
     KUCOIN,
     MEXC,
-    HTX,
     CRYPTOCOM
 }

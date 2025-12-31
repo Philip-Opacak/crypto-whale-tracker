@@ -2,17 +2,15 @@ package com.whalewatcher.ingest.offchain.websocket;
 
 import com.google.gson.Gson;
 import com.whalewatcher.domain.Exchange;
-import com.whalewatcher.domain.Trade;
-import com.whalewatcher.service.IngestionService;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class MexcStreamAdapter extends WebSocketClient implements ExchangeStreamer {
@@ -23,30 +21,15 @@ public class MexcStreamAdapter extends WebSocketClient implements ExchangeStream
     record DealParam(String symbol, Boolean compress) {}
     record SubDealMsg(String method, DealParam param) {}
 
-    record DealPush(
-            String symbol,  //ticker
-            List<DealItem> data,
-            String channel,
-            long ts
-    ) {}
+    private final RawWsBus bus;
 
-    record DealItem(
-            double p,   // price
-            double v,   // volume
-            int T,      // side
-            int O,
-            int M,
-            long t      // timestamp (ms)
-    ) {}
+    // scheduler for delayed / spaced subscribe sends
+    private final ScheduledExecutorService scheduler =
+            Executors.newSingleThreadScheduledExecutor();
 
-    private final IngestionService ingestionService;
-
-    private final ExecutorService processingPool =
-            Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
-    public MexcStreamAdapter(IngestionService ingestionService) {
+    public MexcStreamAdapter(RawWsBus bus) {
         super(URI.create("wss://contract.mexc.com/edge"));
-        this.ingestionService = ingestionService;
+        this.bus = bus;
     }
 
     @Override
@@ -62,71 +45,41 @@ public class MexcStreamAdapter extends WebSocketClient implements ExchangeStream
     @Override
     public void stop() {
         try { this.close(); } catch (Exception ignored) {}
-        processingPool.shutdownNow();
+        scheduler.shutdownNow();
     }
 
     @Override
-    public void onOpen(ServerHandshake serverHandshake) {
+    public void onOpen(ServerHandshake handshake) {
         System.out.println("MEXC connection opened");
 
-        // Send each ticker in a separate subscription message
-        processingPool.submit(() -> {
-            try { Thread.sleep(250); } catch (InterruptedException ignored) {}
+        List<String> symbols = List.of("BTC_USDT", "ETH_USDT", "BNB_USDT", "SOL_USDT", "XRP_USDT");
 
-            List<String> symbols = List.of("BTC_USDT", "ETH_USDT", "BNB_USDT", "SOL_USDT", "XRP_USDT");
+        // MEXC can be disconnect if messages are sent too fast
+        // Start after 250ms, then send one subscription every 50ms
+        final long startDelayMs = 250;
+        final long stepDelayMs = 50;
 
-            for (String sym : symbols) {
-                SubDealMsg sub = new SubDealMsg("sub.deal", new DealParam(sym, false));
-                this.send(GSON.toJson(sub));
+        for (int i = 0; i < symbols.size(); i++) {
+            String sym = symbols.get(i);
+            long delay = startDelayMs + (i * stepDelayMs);
 
-                try { Thread.sleep(50); } catch (InterruptedException ignored) {}
-            }
+            scheduler.schedule(() -> {
+                try {
+                    SubDealMsg sub = new SubDealMsg("sub.deal", new DealParam(sym, false));
+                    this.send(GSON.toJson(sub));
+                } catch (Exception e) {
+                    System.err.println("MEXC subscribe error (" + sym + "): " + e.getMessage());
+                }
+            }, delay, TimeUnit.MILLISECONDS);
+        }
 
-            System.out.println("MEXC subscribed: " + symbols);
-        });
+        System.out.println("MEXC subscribing: " + symbols);
     }
 
     @Override
-    public void onMessage(String s) {
-        processingPool.submit(() -> {
-            try {
-                DealPush push = GSON.fromJson(s, DealPush.class);
-                if (push == null) return;
-
-                // Only focus on push messages
-                if (push.channel() == null) return;
-                if (!"push.deal".equalsIgnoreCase(push.channel())) return;
-
-                if (push.symbol() == null) return;
-                if (push.data() == null || push.data().isEmpty()) return;
-
-                String symbol = push.symbol();
-
-                for (DealItem d : push.data()) {
-                    if (d == null) continue;
-
-                    String side = switch (d.T) {
-                        case 1 -> "buy";
-                        case 2 -> "sell";
-                        default -> null;
-                    };
-
-                    Trade trade = new Trade(
-                            exchange(),
-                            symbol,
-                            d.p,
-                            d.v,
-                            side == null ? null : side.toLowerCase(Locale.ROOT),
-                            d.t
-                    );
-
-                    ingestionService.ingest(trade);
-                }
-
-            } catch (Exception e) {
-                System.err.println("MEXC parse error: " + e.getMessage());
-            }
-        });
+    public void onMessage(String raw) {
+        if (raw == null || raw.isBlank()) return;
+        bus.publish(Exchange.MEXC, raw);
     }
 
     @Override
