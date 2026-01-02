@@ -1,5 +1,6 @@
 package com.whalewatcher;
 
+import com.whalewatcher.domain.Asset;
 import com.whalewatcher.domain.Exchange;
 import com.whalewatcher.domain.Trade;
 import com.whalewatcher.domain.OffChainWhaleEvent;
@@ -45,7 +46,7 @@ public class NormalizationServiceTest {
         );
 
         when(symbolMapper.normalize("XBT/USD", Exchange.KRAKEN))
-                .thenReturn("BTC/USD");
+                .thenReturn(Asset.BTC);
 
         when(whaleDetectionService.isWhale(any()))
                 .thenReturn(true);

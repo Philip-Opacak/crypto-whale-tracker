@@ -1,5 +1,6 @@
 package com.whalewatcher.service;
 
+import com.whalewatcher.domain.Asset;
 import com.whalewatcher.domain.Side;
 import com.whalewatcher.domain.Trade;
 import com.whalewatcher.domain.OffChainWhaleEvent;
@@ -22,7 +23,7 @@ public class NormalizationService {
 
     public OffChainWhaleEvent normalize(Trade trade) {
         // 1) Symbol normalization
-        String normalizedSymbol = symbolMapper.normalize(trade.symbol(), trade.exchange());
+        Asset normalizedSymbol = symbolMapper.normalize(trade.symbol(), trade.exchange());
 
         if (normalizedSymbol == null) {
             return null;

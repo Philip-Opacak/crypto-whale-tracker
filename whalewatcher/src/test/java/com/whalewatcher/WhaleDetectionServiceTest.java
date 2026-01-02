@@ -1,5 +1,6 @@
 package com.whalewatcher;
 
+import com.whalewatcher.domain.Asset;
 import com.whalewatcher.domain.Exchange;
 import com.whalewatcher.domain.OffChainWhaleEvent;
 import com.whalewatcher.service.WhaleDetectionService;
@@ -22,7 +23,7 @@ public class WhaleDetectionServiceTest {
         OffChainWhaleEvent event = new OffChainWhaleEvent(
                 "id",
                 Exchange.KRAKEN,
-                "BTC/USD",
+                Asset.BTC,
                 "buy",
                 50000,
                 2000,
@@ -38,7 +39,7 @@ public class WhaleDetectionServiceTest {
         OffChainWhaleEvent event = new OffChainWhaleEvent(
                 "id",
                 Exchange.KRAKEN,
-                "BTC/USD",
+                Asset.BTC,
                 "buy",
                 5,
                 2,

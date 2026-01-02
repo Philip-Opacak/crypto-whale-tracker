@@ -1,5 +1,6 @@
 package com.whalewatcher.ingest.onchain.evm;
 
+import com.whalewatcher.domain.Asset;
 import com.whalewatcher.domain.Chain;
 import com.whalewatcher.domain.OnChainWhaleEvent;
 import com.whalewatcher.infrastructure.rpc.evm.EvmRpcClient;
@@ -68,7 +69,7 @@ public class EthereumWhaleWatcher {
                     buffer.add(new OnChainWhaleEvent(
                             UUID.randomUUID().toString(),
                             Chain.ETHEREUM,
-                            "ETH",
+                            Asset.ETH,
                             eth,
                             fromAddr,
                             toAddr,

@@ -10,7 +10,7 @@ package com.whalewatcher.domain;
 public record OffChainWhaleEvent(
         String id,
         Exchange exchange,
-        String symbol,
+        Asset asset,
         String side,
         double price,
         double quantity,
