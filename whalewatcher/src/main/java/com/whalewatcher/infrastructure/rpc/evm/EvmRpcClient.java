@@ -3,10 +3,14 @@ package com.whalewatcher.infrastructure.rpc.evm;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.util.retry.Retry;
 
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Component
@@ -41,7 +45,7 @@ public class EvmRpcClient {
         return postRpc("eth_getBlockByNumber", List.of(hexBlock, true));
     }
 
-    //Send a JSON-RPC request to Ethereum
+    // Send a JSON-RPC request to Ethereum (QuickNode)
     private Map<?, ?> postRpc(String method, List<?> params) {
         long id = rpcId.getAndIncrement();
 
@@ -56,9 +60,25 @@ public class EvmRpcClient {
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(Map.class)
+                .timeout(Duration.ofSeconds(10)) // hard stop if RPC hangs
+                .retryWhen(
+                        Retry.backoff(2, Duration.ofMillis(300)) // retries with backoff
+                                .maxBackoff(Duration.ofSeconds(2))
+
+                                .filter(ex -> {
+                                    if (ex instanceof TimeoutException) return true;
+                                    if (ex instanceof WebClientResponseException wex) {
+                                        int s = wex.getStatusCode().value();
+                                        return s == 429 || (s >= 500 && s <= 599);
+                                    }
+                                    return false;
+                                })
+                )
                 .block();
 
-        if (resp == null) throw new IllegalStateException("Null RPC response for " + method);
+        if (resp == null) {
+            throw new IllegalStateException("Null RPC response for " + method);
+        }
 
         if (resp.containsKey("error")) {
             throw new IllegalStateException("RPC error for " + method + ": " + resp.get("error"));

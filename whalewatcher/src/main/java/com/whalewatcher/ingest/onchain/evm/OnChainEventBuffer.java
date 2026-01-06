@@ -15,35 +15,28 @@ public class OnChainEventBuffer {
     private final Set<String> seenTxHashes = new HashSet<>();
 
     public synchronized void add(OnChainWhaleEvent e) {
-        // Deduplicate by tx hash
-        if (seenTxHashes.contains(e.txHash())) {
-            return;
-        }
+        String key = e.chain().name() + ":" + e.txHash();
+
+        if (seenTxHashes.contains(key)) return;
 
         events.addFirst(e);
-        seenTxHashes.add(e.txHash());
+        seenTxHashes.add(key);
 
-        // Trim event buffer
         while (events.size() > MAX_EVENTS) {
             OnChainWhaleEvent removed = events.removeLast();
-            // also remove its hash
-            seenTxHashes.remove(removed.txHash());
+            seenTxHashes.remove(removed.chain().name() + ":" + removed.txHash());
         }
 
-        // Safety trim for hashes (in case of weird patterns)
         if (seenTxHashes.size() > MAX_HASHES) {
             Iterator<OnChainWhaleEvent> it = events.descendingIterator();
             Set<String> keep = new HashSet<>();
 
             while (it.hasNext() && keep.size() < MAX_EVENTS) {
-                keep.add(it.next().txHash());
+                OnChainWhaleEvent ev = it.next();
+                keep.add(ev.chain().name() + ":" + ev.txHash());
             }
 
             seenTxHashes.retainAll(keep);
         }
-    }
-
-    public synchronized List<OnChainWhaleEvent> latest(int limit) {
-        return events.stream().limit(limit).toList();
     }
 }

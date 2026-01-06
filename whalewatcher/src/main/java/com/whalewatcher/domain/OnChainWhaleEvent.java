@@ -1,10 +1,11 @@
 package com.whalewatcher.domain;
 
+import java.math.BigDecimal;
+
 public record OnChainWhaleEvent(
-        String id,
         Chain chain,
         Asset asset,
-        double amount,
+        BigDecimal amount,
         String fromAddress,
         String toAddress,
         String txHash,
