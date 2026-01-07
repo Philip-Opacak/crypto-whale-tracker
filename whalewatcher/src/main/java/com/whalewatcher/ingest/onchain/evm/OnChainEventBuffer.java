@@ -39,4 +39,9 @@ public class OnChainEventBuffer {
             seenTxHashes.retainAll(keep);
         }
     }
+
+    public synchronized List<OnChainWhaleEvent> latest(int limit) {
+        int safeLimit = Math.max(0, Math.min(limit, MAX_EVENTS));
+        return events.stream().limit(safeLimit).toList();
+    }
 }
