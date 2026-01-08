@@ -34,4 +34,6 @@ public class RawWsBus {
     }
 
     public int size() { return q.size(); }
+
+    public long droppedCount() { return dropped.get(); }
 }
