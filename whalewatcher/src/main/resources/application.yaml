@@ -43,7 +43,11 @@ streams:
 whalewatcher:
   onchain:
     quicknodeHttpUrl: ${QUICKNODE_HTTP_URL}
+    quicknodeBtcHttpUrl: ${QUICKNODE_BTC_HTTP_URL}
+
     pollMs: 60000
     maxBlocksPerPoll: 50
+
     native:
       whaleThresholdEth: 500
+      whaleThresholdBtc: 100
