@@ -5,7 +5,7 @@ import com.whalewatcher.domain.Asset;
 import com.whalewatcher.domain.Chain;
 import com.whalewatcher.domain.OnChainWhaleEvent;
 import com.whalewatcher.infrastructure.rpc.bitcoin.BitcoinRpcClient;
-import com.whalewatcher.ingest.onchain.evm.OnChainEventBuffer;
+import com.whalewatcher.repository.OnChainEventBuffer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;

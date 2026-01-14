@@ -4,6 +4,7 @@ import com.whalewatcher.domain.Asset;
 import com.whalewatcher.domain.Chain;
 import com.whalewatcher.domain.OnChainWhaleEvent;
 import com.whalewatcher.infrastructure.rpc.evm.EvmRpcClient;
+import com.whalewatcher.repository.OnChainEventBuffer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;

@@ -1,17 +1,16 @@
 package com.whalewatcher.controller;
 
+import com.whalewatcher.domain.Asset;
 import com.whalewatcher.domain.OnChainWhaleEvent;
-import com.whalewatcher.ingest.onchain.evm.OnChainEventBuffer;
+import com.whalewatcher.repository.OnChainEventBuffer;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/onchain")
+@RequestMapping("/onchain")
 @RequiredArgsConstructor
 public class OnChainController {
     private final OnChainEventBuffer buffer;
@@ -19,6 +18,14 @@ public class OnChainController {
     @GetMapping("/whales")
     public List<OnChainWhaleEvent> whales(@RequestParam(defaultValue = "50") int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 500));
-        return buffer.latest(safeLimit);
+        return buffer.getAll(safeLimit);
+    }
+
+    @GetMapping("whales/asset/{asset}")
+    public ResponseEntity<List<OnChainWhaleEvent>> getByAsset(
+            @PathVariable Asset asset,
+            @RequestParam(defaultValue = "100") int limit
+    ) {
+        return ResponseEntity.ok(buffer.getAllByAsset(asset, limit));
     }
 }
